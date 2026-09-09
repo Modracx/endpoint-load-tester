@@ -1,0 +1,1589 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Endpoint Load Tester</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #000000;
+    --surface: #0a0a0a;
+    --surface-hover: #141414;
+    --surface-sub: #1c1c1c;
+    --border: #333333;
+    --border-subtle: #222222;
+    --border-focus: #777777;
+    --text: #ffffff;             /* Pure white: 21:1 contrast on #000000 */
+    --text-muted: #cccccc;       /* High-contrast muted: >11.5:1 contrast on #000000 */
+    --text-dim: #999999;         /* High-contrast subtext: 9.3:1 contrast on #000000 */
+    --accent: #ffffff;
+    --accent-bg: #ffffff;
+    --accent-fg: #000000;
+    --ok: #34d399;               /* 10.2:1 contrast on #000000 */
+    --warn: #fbbf24;             /* 13.8:1 contrast on #000000 */
+    --bad: #fb7185;              /* 9.1:1 contrast on #000000 */
+    --radius: 6px;
+    --mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+    --sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  code, pre, .mono {
+    font-family: var(--mono);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 1px;
+  }
+
+  /* Header */
+  header {
+    height: 48px;
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+  }
+
+  .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nav-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .nav-tag {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    border-left: 1px solid var(--border);
+    padding-left: 12px;
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    flex: 1;
+    min-height: calc(100vh - 48px);
+  }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* Left Config Panel */
+  .config-panel {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Right Dashboard */
+  .dashboard {
+    background: var(--bg);
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Form Elements */
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: var(--sans);
+    transition: border-color 0.15s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--border-focus);
+  }
+
+  textarea {
+    font-family: var(--mono);
+    font-size: 12px;
+    resize: vertical;
+    min-height: 56px;
+    line-height: 1.4;
+  }
+
+  .row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+
+  /* Segmented Toggle */
+  .segmented {
+    display: flex;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .seg-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 5px 8px;
+    border-radius: calc(var(--radius) - 2px);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+
+  .seg-btn:hover {
+    color: var(--text);
+  }
+
+  .seg-btn[aria-pressed="true"] {
+    background: var(--surface-sub);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  /* Preset Pills */
+  .preset-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .preset-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 4px 8px;
+    border-radius: var(--radius);
+    font-size: 11px;
+    font-family: var(--mono);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .preset-btn:hover {
+    border-color: var(--border-focus);
+    color: var(--text);
+  }
+
+  /* IP Box */
+  .ip-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .ip-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ip-tag {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  .ip-val {
+    color: var(--text);
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-bg);
+    color: var(--accent-fg);
+    border: 1px solid transparent;
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, background 0.15s;
+  }
+
+  .btn:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-subtle {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .btn-subtle:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text);
+    border-color: var(--border-focus);
+  }
+
+  .btn-danger {
+    background: var(--bad);
+    color: #000000;
+    font-weight: 600;
+  }
+
+  .btn-sm {
+    padding: 4px 8px;
+    font-size: 11.5px;
+  }
+
+  /* Disclaimer check */
+  .auth-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    line-height: 1.4;
+  }
+
+  .auth-box input[type="checkbox"] {
+    width: auto;
+    margin-top: 2px;
+    accent-color: var(--text);
+  }
+
+  /* Dashboard Metrics */
+  .metrics-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  @media (max-width: 700px) {
+    .metrics-strip { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .metric-cell {
+    background: var(--surface);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .metric-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  .metric-val {
+    font-size: 20px;
+    font-weight: 600;
+    font-family: var(--mono);
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .metric-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* Progress & Status */
+  .status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+
+  .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-dim);
+  }
+
+  .status-dot.active {
+    background: var(--ok);
+  }
+
+  .progress-line {
+    height: 2px;
+    background: var(--border);
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    border-radius: 1px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--text);
+    transition: width 0.15s linear;
+  }
+
+  /* Chart Canvas */
+  .chart-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    position: relative;
+  }
+
+  .chart-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  canvas#chart {
+    width: 100%;
+    height: 140px;
+    display: block;
+    cursor: crosshair;
+  }
+
+  .chart-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--surface-sub);
+    border: 1px solid var(--border-focus);
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: var(--mono);
+    display: none;
+    z-index: 10;
+    transform: translate(-50%, -120%);
+    white-space: nowrap;
+  }
+
+  /* Tables */
+  .data-pane {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .data-pane-head {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  th, td {
+    padding: 8px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  th {
+    color: var(--text-dim);
+    font-weight: 500;
+    font-size: 11px;
+    background: var(--bg);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  td.num, th.num {
+    text-align: right;
+    font-family: var(--mono);
+  }
+
+  /* Status Pills */
+  .pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    display: inline-block;
+  }
+
+  .pill-2xx { color: var(--ok); border-color: rgba(52, 211, 153, 0.4); }
+  .pill-3xx { color: var(--text); }
+  .pill-4xx { color: var(--warn); border-color: rgba(251, 191, 36, 0.4); }
+  .pill-429 { color: var(--bad); border-color: rgba(251, 113, 133, 0.6); }
+  .pill-5xx, .pill-err { color: var(--bad); border-color: rgba(251, 113, 133, 0.4); }
+
+  /* Log Viewer */
+  .log-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .log-toolbar {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+  }
+
+  .log-stream {
+    height: 260px;
+    overflow-y: auto;
+    padding: 4px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    background: var(--surface);
+  }
+
+  .log-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .log-row:hover {
+    background: var(--surface-hover);
+  }
+
+  .log-row .seq { color: var(--text-dim); width: 42px; text-align: right; }
+  .log-row .time { color: var(--text-dim); width: 56px; text-align: right; }
+  .log-row .method { color: var(--text-muted); width: 44px; font-weight: 500; }
+  .log-row .status { width: 50px; }
+  .log-row .ms { color: var(--text-muted); width: 60px; text-align: right; }
+  .log-row .msg { color: var(--bad); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .log-row.event { color: var(--text-dim); font-style: italic; cursor: default; }
+  .log-row.event:hover { background: transparent; }
+
+  /* Details Dialog */
+  dialog {
+    max-width: 680px;
+    width: 90%;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.8);
+    margin: auto;
+    padding: 0;
+  }
+
+  dialog::backdrop {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .dialog-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .dialog-body {
+    padding: 16px;
+    max-height: 70vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  pre.code {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
+  /* Utility */
+  .hide { display: none !important; }
+  .text-muted { color: var(--text-muted); }
+  .text-dim { color: var(--text-dim); }
+  .empty { padding: 32px 0; text-align: center; color: var(--text-dim); font-size: 12px; }
+  .flex-row { display: flex; align-items: center; gap: 8px; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-left">
+    <div class="nav-title">Load Tester</div>
+    <div class="nav-tag">Browser Exit IP</div>
+  </div>
+  <div class="nav-right">
+    <button type="button" class="btn btn-subtle btn-sm" id="copyCurlBtn">Copy cURL</button>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- Left: Configuration -->
+  <aside class="config-panel">
+    <!-- Presets -->
+    <div class="section">
+      <div class="section-label">Presets</div>
+      <div class="preset-row">
+        <button type="button" class="preset-btn" data-preset="burst">Burst (50 req / 5 conc)</button>
+        <button type="button" class="preset-btn" data-preset="probe">Probe (Stop on 429)</button>
+        <button type="button" class="preset-btn" data-preset="pacing">Paced (1 req / 15s)</button>
+        <button type="button" class="preset-btn" data-preset="smoke">Smoke (5 req)</button>
+      </div>
+    </div>
+
+    <form id="cfg" onsubmit="return false">
+      <!-- Disclaimer Authorization -->
+      <div class="field" style="margin-bottom: 16px">
+        <div class="auth-box">
+          <input type="checkbox" id="auth">
+          <label for="auth">
+            I confirm I own or am authorized to test this endpoint. Requests fire directly from this browser session.
+          </label>
+        </div>
+      </div>
+
+      <!-- Exit IPs (IPv4 and IPv6) -->
+      <div class="field" style="margin-bottom: 16px">
+        <div class="flex-between" style="margin-bottom: 4px">
+          <label>Exit IP Addresses</label>
+          <button type="button" class="btn btn-subtle btn-sm" id="refreshIp" style="padding: 2px 6px">Refresh</button>
+        </div>
+        <div class="ip-box">
+          <div class="ip-row">
+            <span class="ip-tag">IPv4</span>
+            <span class="ip-val" id="ip4Display">detecting…</span>
+          </div>
+          <div class="ip-row">
+            <span class="ip-tag">IPv6</span>
+            <span class="ip-val" id="ip6Display">detecting…</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Target URL & Protocol -->
+      <div class="section" style="margin-bottom: 16px">
+        <div class="section-label">Request Target</div>
+        <div class="field">
+          <label for="url">Target URL</label>
+          <input id="url" placeholder="https://api.example.com/v1/resource">
+        </div>
+
+        <div class="row-2">
+          <div class="field">
+            <label for="method">Method</label>
+            <select id="method">
+              <option>GET</option>
+              <option>POST</option>
+              <option>PUT</option>
+              <option>PATCH</option>
+              <option>DELETE</option>
+              <option>HEAD</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="mode">CORS Mode</label>
+            <select id="mode">
+              <option value="cors">cors (Read status & body)</option>
+              <option value="no-cors">no-cors (Opaque)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="headers">Headers <span class="text-dim">(Name: value)</span></label>
+          <textarea id="headers" placeholder="Authorization: Bearer token&#10;X-Client-ID: loadtester"></textarea>
+        </div>
+
+        <!-- Body Type -->
+        <div class="field">
+          <label id="btLbl">Payload Body</label>
+          <div class="segmented" id="bodyType" role="group" aria-labelledby="btLbl">
+            <button type="button" class="seg-btn" data-t="none" aria-pressed="true">None</button>
+            <button type="button" class="seg-btn" data-t="json" aria-pressed="false">JSON</button>
+            <button type="button" class="seg-btn" data-t="form" aria-pressed="false">Form</button>
+            <button type="button" class="seg-btn" data-t="multipart" aria-pressed="false">Multi</button>
+            <button type="button" class="seg-btn" data-t="raw" aria-pressed="false">Raw</button>
+          </div>
+        </div>
+
+        <div class="field hide" data-body="json">
+          <label for="bodyJson">JSON Body</label>
+          <textarea id="bodyJson" placeholder='{"query": "status"}'></textarea>
+        </div>
+        <div class="field hide" data-body="form">
+          <label for="bodyForm">Form Fields <span class="text-dim">(key=value)</span></label>
+          <textarea id="bodyForm" placeholder="username=alice&#10;action=login"></textarea>
+        </div>
+        <div class="field hide" data-body="multipart">
+          <label for="bodyMulti">Multipart Fields <span class="text-dim">(key=value)</span></label>
+          <textarea id="bodyMulti" placeholder="field=value"></textarea>
+        </div>
+        <div class="field hide" data-body="raw">
+          <label for="bodyRaw">Raw Body</label>
+          <textarea id="bodyRaw"></textarea>
+          <input id="rawCt" value="text/plain" placeholder="Content-Type" style="margin-top: 4px">
+        </div>
+      </div>
+
+      <!-- Execution Options -->
+      <div class="section" style="margin-bottom: 20px">
+        <div class="section-label">Execution Profile</div>
+        
+        <div class="field">
+          <div class="segmented" id="runMode" role="group">
+            <button type="button" class="seg-btn" data-m="count" aria-pressed="true">Fixed Count</button>
+            <button type="button" class="seg-btn" data-m="duration" aria-pressed="false">Timed Duration</button>
+          </div>
+        </div>
+
+        <div class="row-2">
+          <div class="field" data-run="count">
+            <label for="count">Total Requests</label>
+            <input id="count" type="number" value="20" min="1" max="100000">
+          </div>
+          <div class="field hide" data-run="duration">
+            <label for="duration">Duration (Seconds)</label>
+            <input id="duration" type="number" value="300" min="1" max="3600">
+          </div>
+          <div class="field">
+            <label for="conc">Concurrency</label>
+            <input id="conc" type="number" value="1" min="1" max="500">
+          </div>
+        </div>
+
+        <div class="row-2">
+          <div class="field">
+            <label for="delay">Delay (ms)</label>
+            <input id="delay" type="number" value="0" min="0" step="100">
+          </div>
+          <div class="field">
+            <label for="timeout">Timeout (ms)</label>
+            <input id="timeout" type="number" value="15000" min="100">
+          </div>
+        </div>
+
+        <div class="field">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:normal; color:var(--text-muted)">
+            <input type="checkbox" id="stop429" style="width:auto; accent-color:var(--text)">
+            Stop immediately on first 429 response
+          </label>
+        </div>
+      </div>
+
+      <!-- Start / Stop Action -->
+      <div class="field">
+        <button type="button" class="btn" id="run" disabled style="width:100%; padding: 9px">Start Test</button>
+        <button type="button" class="btn btn-danger hide" id="stop" style="width:100%; padding: 9px">Stop Test</button>
+      </div>
+    </form>
+  </aside>
+
+  <!-- Right: Minimalist Dashboard -->
+  <main class="dashboard">
+    <!-- Live Status & Progress Bar -->
+    <div class="field">
+      <div class="status-header" style="margin-bottom: 6px">
+        <div class="status-indicator">
+          <span class="status-dot" id="liveDot"></span>
+          <span id="liveStatusText">Idle</span>
+          <span class="text-dim mono" id="liveTargetSummary"></span>
+        </div>
+        <div class="mono text-muted" id="liveTimeSummary">0.0s elapsed</div>
+      </div>
+      <div class="progress-line">
+        <div class="progress-fill" id="progressBar"></div>
+      </div>
+    </div>
+
+    <!-- 4 Metrics Strip -->
+    <div class="metrics-strip">
+      <div class="metric-cell">
+        <div class="metric-label">Completed</div>
+        <div class="metric-val" id="mDone">0</div>
+        <div class="metric-sub" id="mDoneSub">0.0% ok</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-label">429 Rate Limits</div>
+        <div class="metric-val" id="mRl" style="color:var(--text)">0</div>
+        <div class="metric-sub" id="mRlSub">Threshold: —</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-label">Errors</div>
+        <div class="metric-val" id="mErr">0</div>
+        <div class="metric-sub" id="mErrSub">0 network fails</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-label">Throughput</div>
+        <div class="metric-val" id="mRps">0.0</div>
+        <div class="metric-sub">req / sec</div>
+      </div>
+    </div>
+
+    <!-- Latency Timeline Canvas -->
+    <div class="chart-container">
+      <div class="chart-head">
+        <div class="section-label">Latency Timeline (ms)</div>
+        <div class="flex-row">
+          <button type="button" class="btn btn-subtle btn-sm" id="expJson">JSON</button>
+          <button type="button" class="btn btn-subtle btn-sm" id="expCsv">CSV</button>
+        </div>
+      </div>
+      <div style="position:relative">
+        <canvas id="chart" width="900" height="140"></canvas>
+        <div class="chart-tooltip" id="chartTooltip"></div>
+      </div>
+    </div>
+
+    <!-- Data Tables: Status Breakdown & Percentiles -->
+    <div class="row-2">
+      <div class="data-pane">
+        <div class="data-pane-head">Status Codes</div>
+        <table>
+          <thead>
+            <tr><th>Status</th><th class="num">Count</th><th class="num">%</th></tr>
+          </thead>
+          <tbody id="statusTableBody">
+            <tr><td colspan="3" class="empty">No requests recorded</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="data-pane">
+        <div class="data-pane-head">Latency Percentiles (ms)</div>
+        <table>
+          <thead>
+            <tr><th class="num">Min</th><th class="num">Avg</th><th class="num">p50</th><th class="num">p90</th><th class="num">p99</th><th class="num">Max</th></tr>
+          </thead>
+          <tbody id="percentileTableBody">
+            <tr><td colspan="6" class="empty">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Live Request Log -->
+    <div class="log-box">
+      <div class="log-toolbar">
+        <span class="section-label" style="margin-right:4px">Request Stream</span>
+        <select id="logFilter" style="width:auto; padding:3px 6px; font-size:11.5px">
+          <option value="all">All</option>
+          <option value="bad">Issues (≥400 / Errors)</option>
+          <option value="429">429 Only</option>
+          <option value="2xx">2xx Only</option>
+        </select>
+        <label style="display:flex; align-items:center; gap:4px; font-size:11.5px; color:var(--text-muted); cursor:pointer">
+          <input type="checkbox" id="autoscroll" checked style="width:auto; accent-color:var(--text)"> Scroll
+        </label>
+        <button type="button" class="btn btn-subtle btn-sm" id="clearLog" style="margin-left:auto; padding:2px 6px">Clear</button>
+        <span class="mono text-dim" id="logCnt" style="font-size:11px">0</span>
+      </div>
+      <div class="log-stream" id="logview" role="list" tabindex="0">
+        <div class="empty" id="logEmptyState">Ready to stream.</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Request Inspection Dialog -->
+<dialog id="detail">
+  <div class="dialog-head">
+    <span id="dTitle">Request Inspector</span>
+    <div class="flex-row">
+      <button type="button" class="btn btn-subtle btn-sm" id="dCopyCurl">Copy cURL</button>
+      <button type="button" class="btn btn-subtle btn-sm" id="dClose">✕</button>
+    </div>
+  </div>
+  <div class="dialog-body" id="dbody"></div>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+let bodyT='none', runM='count', running=false, controllers=new Set(), records=[];
+let logMethod='GET', logFilter='all';
+const MAX_LOG_NODES=2000, DETAIL_KEEP=2000, BODY_CAP=8000;
+const esc = s => String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+// ---------- Config persistence ----------
+const CFG_IDS=['url','method','mode','headers','bodyJson','bodyForm','bodyMulti','bodyRaw','rawCt','count','duration','conc','delay','timeout'];
+function saveCfg(){
+  const o={bodyT,runM,stop429:$('#stop429').checked};
+  CFG_IDS.forEach(id=>o[id]=$('#'+id).value);
+  try{ localStorage.setItem('lt_cfg',JSON.stringify(o)); }catch{}
+}
+function loadCfg(){
+  let o; try{ o=JSON.parse(localStorage.getItem('lt_cfg')||'{}'); }catch{ return; }
+  CFG_IDS.forEach(id=>{ if(o[id]!=null) $('#'+id).value=o[id]; });
+  if(o.bodyT) setBodyType(o.bodyT);
+  if(o.runM) setRunMode(o.runM);
+  if(o.stop429) $('#stop429').checked=true;
+}
+document.addEventListener('input', e=>{ if(e.target.id) saveCfg(); });
+
+// ---------- Presets ----------
+const PRESETS = {
+  burst: { count: 50, conc: 5, delay: 0, runM: 'count', stop429: false },
+  probe: { count: 100, conc: 2, delay: 50, runM: 'count', stop429: true },
+  pacing: { duration: 300, conc: 1, delay: 15000, runM: 'duration', stop429: false },
+  smoke: { count: 5, conc: 1, delay: 1000, runM: 'count', stop429: false }
+};
+
+document.querySelectorAll('[data-preset]').forEach(btn => {
+  btn.onclick = () => {
+    const p = PRESETS[btn.dataset.preset];
+    if(!p) return;
+    if(p.count!=null) $('#count').value = p.count;
+    if(p.duration!=null) $('#duration').value = p.duration;
+    if(p.conc!=null) $('#conc').value = p.conc;
+    if(p.delay!=null) $('#delay').value = p.delay;
+    if(p.stop429!=null) $('#stop429').checked = p.stop429;
+    if(p.runM) setRunMode(p.runM);
+    saveCfg();
+  };
+});
+
+// ---------- IP detection ----------
+async function getIp(u,pick){ try{ const r=await fetch(u,{cache:'no-store'}); return pick(await r.json())||null; }catch{ return null; } }
+async function detectIp(){
+  $('#ip4Display').textContent='detecting…';
+  $('#ip6Display').textContent='detecting…';
+  const [v4,any]=await Promise.all([
+    getIp('https://api.ipify.org?format=json',j=>j.ip).then(v=>v||getIp('https://ipapi.co/json/',j=>j.ip)),
+    getIp('https://api64.ipify.org?format=json',j=>j.ip),
+  ]);
+  $('#ip4Display').textContent = v4 || 'not available';
+  const hasV6 = any && any.includes(':');
+  $('#ip6Display').textContent = hasV6 ? any : 'none (IPv4-only connection)';
+}
+$('#refreshIp').onclick=detectIp; detectIp();
+
+// ---------- Toggles ----------
+function setBodyType(t){
+  bodyT=t;
+  [...$('#bodyType').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.t===t));
+  document.querySelectorAll('[data-body]').forEach(el=>el.classList.toggle('hide',el.dataset.body!==t));
+}
+$('#bodyType').addEventListener('click',e=>{const b=e.target.closest('button');if(b){setBodyType(b.dataset.t);saveCfg();}});
+
+function setRunMode(m){
+  runM=m;
+  [...$('#runMode').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.m===m));
+  document.querySelectorAll('[data-run]').forEach(el=>el.classList.toggle('hide',el.dataset.run!==m));
+}
+$('#runMode').addEventListener('click',e=>{const b=e.target.closest('button');if(b){setRunMode(b.dataset.m);saveCfg();}});
+
+$('#auth').onchange=e=>$('#run').disabled=!e.target.checked||running;
+
+// ---------- Request Builder & cURL ----------
+const hasHeader=(h,n)=>Object.keys(h).some(k=>k.toLowerCase()===n);
+function parseHeaders(){
+  const h={};
+  $('#headers').value.split('\n').forEach(l=>{
+    const t=l.trim();
+    if(!t||t.startsWith('#'))return;
+    const i=t.indexOf(':');
+    if(i<0)return;
+    h[t.slice(0,i).trim()]=t.slice(i+1).trim();
+  });
+  return h;
+}
+function kvLines(text){
+  const o=[];
+  text.split('\n').forEach(l=>{
+    const t=l.trim();
+    if(!t)return;
+    const i=t.indexOf('=');
+    if(i<0)return;
+    o.push([t.slice(0,i).trim(),t.slice(i+1)]);
+  });
+  return o;
+}
+function buildReq(){
+  const method=$('#method').value, headers=parseHeaders();
+  const init={method,headers:{...headers},mode:$('#mode').value,cache:'no-store',redirect:'manual'};
+  let preview='', ctNote='';
+  if(!['GET','HEAD'].includes(method)){
+    if(bodyT==='json'){
+      preview=$('#bodyJson').value;
+      init.body=preview;
+      if(!hasHeader(headers,'content-type')) init.headers['Content-Type']='application/json';
+    } else if(bodyT==='form'){
+      const p=new URLSearchParams();
+      kvLines($('#bodyForm').value).forEach(([k,v])=>p.append(k,v));
+      init.body=p;
+      preview=p.toString();
+      ctNote='application/x-www-form-urlencoded';
+    } else if(bodyT==='multipart'){
+      const f=new FormData();
+      const parts=kvLines($('#bodyMulti').value);
+      parts.forEach(([k,v])=>f.append(k,v));
+      init.body=f;
+      preview=parts.map(([k,v])=>k+' = '+v).join('\n');
+      ctNote='multipart/form-data';
+    } else if(bodyT==='raw'){
+      preview=$('#bodyRaw').value;
+      init.body=preview;
+      if(!hasHeader(headers,'content-type')) init.headers['Content-Type']=$('#rawCt').value||'text/plain';
+    }
+  }
+  return {init, preview, ctNote, sentHeaders:{...init.headers}};
+}
+
+function generateCurl(urlOverride, reqInit, reqBody){
+  const u = urlOverride || $('#url').value.trim() || 'https://api.example.com';
+  const m = reqInit?.method || $('#method').value;
+  const hdrs = reqInit?.headers || parseHeaders();
+  const body = reqBody !== undefined ? reqBody : (buildReq().preview);
+  
+  let parts = [`curl -X ${m} "${u}"`];
+  for(const [k,v] of Object.entries(hdrs)){
+    parts.push(`-H "${k}: ${v.replace(/"/g, '\\"')}"`);
+  }
+  if(body && !['GET','HEAD'].includes(m)){
+    parts.push(`-d '${body.replace(/'/g, "'\\''")}'`);
+  }
+  return parts.join(' \\\n  ');
+}
+
+$('#copyCurlBtn').onclick = async () => {
+  const curl = generateCurl();
+  try {
+    await navigator.clipboard.writeText(curl);
+    const orig = $('#copyCurlBtn').textContent;
+    $('#copyCurlBtn').textContent = 'Copied';
+    setTimeout(() => { $('#copyCurlBtn').textContent = orig; }, 1400);
+  } catch {}
+};
+
+// ---------- Request log ----------
+function matchFilter(rec){
+  if(logFilter==='all') return true;
+  if(logFilter==='429') return rec.status===429;
+  if(logFilter==='2xx') return typeof rec.status==='number' && rec.status>=200 && rec.status<300;
+  return rec.status==='ERR' || (typeof rec.status==='number' && rec.status>=400);
+}
+
+function statusClass(status){
+  if(status===429) return 'pill-429';
+  if(status==='ERR') return 'pill-err';
+  if(typeof status==='number'){
+    if(status>=200 && status<300) return 'pill-2xx';
+    if(status>=300 && status<400) return 'pill-3xx';
+    if(status>=400 && status<500) return 'pill-4xx';
+    if(status>=500) return 'pill-5xx';
+  }
+  return 'pill-2xx';
+}
+
+function rowEl(idx,rec){
+  const isErr=rec.status==='ERR';
+  const cls=statusClass(rec.status);
+  const lbl=rec.status===0?'opq':rec.status;
+  const d=document.createElement('div');
+  d.className='log-row';
+  d.setAttribute('role','listitem');
+  d.tabIndex=0;
+  d.dataset.idx=idx;
+  d.innerHTML=`<span class="seq mono">#${idx+1}</span><span class="time mono">+${(rec.t/1000).toFixed(2)}s</span>`+
+    `<span class="method mono">${logMethod}</span><span class="status"><span class="pill ${cls}">${lbl}</span></span>`+
+    `<span class="ms mono">${rec.ms.toFixed(0)}ms</span>${rec.err?`<span class="msg mono">${esc(rec.err)}</span>`:''}`;
+  return d;
+}
+
+function appendLog(idx,rec){
+  if(!matchFilter(rec)) return;
+  const v=$('#logview');
+  const empty = $('#logEmptyState');
+  if(empty) empty.remove();
+  v.appendChild(rowEl(idx,rec));
+  while(v.childElementCount>MAX_LOG_NODES) v.removeChild(v.firstChild);
+  if($('#autoscroll').checked) v.scrollTop=v.scrollHeight;
+  updateLogCnt();
+}
+
+function rebuildLog(){
+  const v=$('#logview');
+  v.innerHTML='';
+  const from=Math.max(0,records.length-MAX_LOG_NODES);
+  for(let i=from;i<records.length;i++){
+    if(matchFilter(records[i])) v.appendChild(rowEl(i,records[i]));
+  }
+  if(v.childElementCount===0){
+    v.innerHTML='<div class="empty">No matching log items.</div>';
+  }
+  if($('#autoscroll').checked) v.scrollTop=v.scrollHeight;
+  updateLogCnt();
+}
+
+function logEvt(text){
+  const v=$('#logview');
+  const empty = $('#logEmptyState');
+  if(empty) empty.remove();
+  const d=document.createElement('div');
+  d.className='log-row event';
+  d.textContent=text;
+  v.appendChild(d);
+  if($('#autoscroll').checked) v.scrollTop=v.scrollHeight;
+  updateLogCnt();
+}
+
+function updateLogCnt(){
+  const cnt = $('#logview').querySelectorAll('.log-row:not(.event)').length;
+  $('#logCnt').textContent=cnt;
+}
+
+$('#logFilter').onchange=e=>{ logFilter=e.target.value; rebuildLog(); };
+$('#clearLog').onclick=()=>{
+  $('#logview').innerHTML='<div class="empty" id="logEmptyState">Log cleared.</div>';
+  updateLogCnt();
+};
+$('#logview').addEventListener('click',e=>{ const r=e.target.closest('.log-row'); if(r&&r.dataset.idx!=null) openDetail(+r.dataset.idx); });
+$('#logview').addEventListener('keydown',e=>{ if(e.key!=='Enter'&&e.key!==' ')return; const r=e.target.closest('.log-row'); if(r&&r.dataset.idx!=null){ e.preventDefault(); openDetail(+r.dataset.idx); } });
+
+// ---------- Detail Dialog ----------
+const kvTable=o=>{
+  const k=Object.keys(o||{});
+  return k.length
+    ? '<table>' + k.map(x=>`<tr><td style="color:var(--text-dim); width:130px">${esc(x)}</td><td class="mono">${esc(o[x])}</td></tr>`).join('') + '</table>'
+    : '<div class="text-dim">— none —</div>';
+};
+
+let currentDetailIdx = null;
+
+function formatJsonIfPossible(str){
+  try {
+    const parsed = JSON.parse(str);
+    return JSON.stringify(parsed, null, 2);
+  } catch {
+    return str;
+  }
+}
+
+function openDetail(idx){
+  const rec=records[idx]; if(!rec) return;
+  currentDetailIdx = idx;
+  const dt=rec.detail;
+  let html=`
+    <div>
+      <div class="section-label" style="margin-bottom:6px">Summary</div>
+      <table>
+        <tr><td style="color:var(--text-dim); width:130px">Request ID</td><td class="mono">#${idx+1}</td></tr>
+        <tr><td style="color:var(--text-dim)">URL</td><td class="mono" style="word-break:break-all">${esc(rec.detail?.url||'')}</td></tr>
+        <tr><td style="color:var(--text-dim)">Method</td><td class="mono"><strong>${esc(logMethod)}</strong></td></tr>
+        <tr><td style="color:var(--text-dim)">Status</td><td><span class="pill ${statusClass(rec.status)}">${rec.status==='ERR'?'Error':rec.status} ${esc(dt?.statusText||'')}</span></td></tr>
+        <tr><td style="color:var(--text-dim)">Latency</td><td class="mono"><strong>${rec.ms.toFixed(1)} ms</strong></td></tr>
+        <tr><td style="color:var(--text-dim)">Timeline</td><td class="mono">+${(rec.t/1000).toFixed(2)}s from start</td></tr>
+      </table>
+    </div>`;
+
+  if(dt){
+    html+=`
+      <div>
+        <div class="section-label" style="margin-bottom:6px">Request Headers</div>
+        <div class="data-pane" style="padding:4px">${kvTable(dt.reqHeaders)}</div>
+      </div>`;
+
+    if(dt.reqBody){
+      html+=`
+        <div>
+          <div class="section-label" style="margin-bottom:6px">Request Body</div>
+          <pre class="code">${esc(formatJsonIfPossible(dt.reqBody))}</pre>
+        </div>`;
+    }
+
+    if(rec.status==='ERR'){
+      html+=`
+        <div>
+          <div class="section-label" style="margin-bottom:6px; color:var(--bad)">Error Message</div>
+          <pre class="code" style="color:var(--bad)">${esc(dt.error||rec.err)}</pre>
+        </div>`;
+    } else if(dt.opaque){
+      html+=`
+        <div>
+          <div class="section-label" style="margin-bottom:6px">Response</div>
+          <p class="text-dim" style="font-size:12px">no-cors mode: response is opaque. Enable CORS on endpoint to read body & headers.</p>
+        </div>`;
+    } else {
+      html+=`
+        <div>
+          <div class="section-label" style="margin-bottom:6px">Response Headers</div>
+          <div class="data-pane" style="padding:4px">${kvTable(dt.respHeaders)}</div>
+        </div>
+        <div>
+          <div class="section-label" style="margin-bottom:6px">Response Body</div>
+          <pre class="code">${dt.respBody ? esc(formatJsonIfPossible(dt.respBody)) : '<span class="text-dim">— empty —</span>'}</pre>
+        </div>`;
+    }
+  }
+
+  $('#dbody').innerHTML=html;
+  $('#dTitle').textContent=`Request #${idx+1} · ${logMethod} · ${rec.status==='ERR'?'Error':rec.status}`;
+  const dlg=$('#detail');
+  if(!dlg.open) dlg.showModal();
+}
+
+$('#dClose').onclick=()=>$('#detail').close();
+$('#detail').addEventListener('click',e=>{ if(e.target===$('#detail')) $('#detail').close(); });
+
+$('#dCopyCurl').onclick = async () => {
+  if(currentDetailIdx == null) return;
+  const rec = records[currentDetailIdx];
+  if(!rec) return;
+  const curl = generateCurl(rec.detail?.url, { method: logMethod, headers: rec.detail?.reqHeaders }, rec.detail?.reqBody);
+  try {
+    await navigator.clipboard.writeText(curl);
+    $('#dCopyCurl').textContent = 'Copied';
+    setTimeout(() => { $('#dCopyCurl').textContent = 'Copy cURL'; }, 1400);
+  } catch {}
+};
+
+// ---------- Stats & Charting ----------
+const pct=(s,p)=>s.length?s[Math.min(s.length-1,Math.floor(p/100*s.length))]:0;
+
+function renderStatusTable(hist, total){
+  const tbody = $('#statusTableBody');
+  const keys = Object.keys(hist).sort();
+  if(!keys.length){
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">No requests recorded</td></tr>';
+    return;
+  }
+  tbody.innerHTML = keys.map(s => {
+    const count = hist[s];
+    const pctVal = ((count / Math.max(total, 1)) * 100).toFixed(1);
+    const cls = statusClass(s==='ERR'?'ERR':+s);
+    const lbl = s==='0'?'opaque':s;
+    return `<tr>
+      <td><span class="pill ${cls}">${lbl}</span></td>
+      <td class="num"><strong>${count}</strong></td>
+      <td class="num text-dim">${pctVal}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPercentileTable(lat){
+  const tbody = $('#percentileTableBody');
+  if(!lat.length){
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">—</td></tr>';
+    return;
+  }
+  const sum = lat.reduce((a,b)=>a+b, 0);
+  tbody.innerHTML = `<tr>
+    <td class="num text-muted">${lat[0].toFixed(1)}</td>
+    <td class="num">${(sum/lat.length).toFixed(1)}</td>
+    <td class="num"><strong>${pct(lat, 50).toFixed(1)}</strong></td>
+    <td class="num">${pct(lat, 90).toFixed(1)}</td>
+    <td class="num">${pct(lat, 99).toFixed(1)}</td>
+    <td class="num text-muted">${lat[lat.length-1].toFixed(1)}</td>
+  </tr>`;
+}
+
+function drawChart(){
+  const c=$('#chart'); if(!c) return;
+  const x=c.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = c.getBoundingClientRect();
+  
+  if (c.width !== rect.width * dpr || c.height !== rect.height * dpr) {
+    c.width = rect.width * dpr;
+    c.height = rect.height * dpr;
+  }
+  x.resetTransform?.();
+  x.scale(dpr, dpr);
+
+  const W = rect.width, H = rect.height;
+  x.clearRect(0,0,W,H);
+  if(!records.length) return;
+
+  const maxT = Math.max(...records.map(r=>r.t), 1);
+  const maxMs = Math.max(...records.map(r=>r.ms), 1);
+
+  // Minimal reference grid lines
+  x.strokeStyle = '#262626';
+  x.lineWidth = 1;
+  for(let i=1; i<=2; i++){
+    const y = (H / 3) * i;
+    x.beginPath();
+    x.moveTo(0, y);
+    x.lineTo(W, y);
+    x.stroke();
+  }
+
+  // Draw clean high-contrast line
+  x.beginPath();
+  x.strokeStyle = '#ffffff';
+  x.lineWidth = 1.5;
+  records.forEach((r,i) => {
+    const px = (r.t / maxT) * (W - 20) + 10;
+    const py = H - (r.ms / maxMs) * (H - 24) - 12;
+    if(i === 0) x.moveTo(px, py); else x.lineTo(px, py);
+  });
+  x.stroke();
+
+  // Highlight 429 & error points
+  records.forEach((r) => {
+    const px = (r.t / maxT) * (W - 20) + 10;
+    const py = H - (r.ms / maxMs) * (H - 24) - 12;
+    if(r.status===429 || r.status==='ERR'){
+      x.fillStyle = '#fb7185';
+      x.beginPath();
+      x.arc(px, py, 3.5, 0, Math.PI*2);
+      x.fill();
+    }
+  });
+}
+
+// Chart hover inspection
+const chartCanvas = $('#chart');
+const chartTooltip = $('#chartTooltip');
+
+chartCanvas.addEventListener('mousemove', e => {
+  if(!records.length) return;
+  const rect = chartCanvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const W = rect.width;
+  const maxT = Math.max(...records.map(r=>r.t), 1);
+  
+  let closest = records[0], minDist = Infinity, cIdx = 0;
+  records.forEach((r, i) => {
+    const px = (r.t / maxT) * (W - 20) + 10;
+    const dist = Math.abs(px - mouseX);
+    if(dist < minDist){ minDist = dist; closest = r; cIdx = i; }
+  });
+
+  if(minDist < 30){
+    const px = (closest.t / maxT) * (W - 20) + 10;
+    chartTooltip.style.display = 'block';
+    chartTooltip.style.left = `${px}px`;
+    chartTooltip.style.top = `24px`;
+    chartTooltip.innerHTML = `#${cIdx+1} · ${closest.status} · ${closest.ms.toFixed(1)}ms`;
+  } else {
+    chartTooltip.style.display = 'none';
+  }
+});
+
+chartCanvas.addEventListener('mouseleave', () => {
+  chartTooltip.style.display = 'none';
+});
+
+chartCanvas.addEventListener('click', e => {
+  if(!records.length) return;
+  const rect = chartCanvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const W = rect.width;
+  const maxT = Math.max(...records.map(r=>r.t), 1);
+  
+  let closest = records[0], minDist = Infinity, cIdx = 0;
+  records.forEach((r, i) => {
+    const px = (r.t / maxT) * (W - 20) + 10;
+    const dist = Math.abs(px - mouseX);
+    if(dist < minDist){ minDist = dist; closest = r; cIdx = i; }
+  });
+  if(minDist < 30) openDetail(cIdx);
+});
+
+// ---------- Main Test Execution Loop ----------
+async function runTest(){
+  const url=$('#url').value.trim();
+  if(!/^https?:\/\//i.test(url)){ alert('Please enter a valid HTTP/HTTPS URL'); return; }
+  
+  const conc=Math.min(+$('#conc').value||1, 500);
+  const delay=Math.max(+$('#delay').value||0, 0);
+  const timeout=+$('#timeout').value||15000;
+  const noCors=$('#mode').value==='no-cors';
+  const stopOn429=$('#stop429').checked;
+  const byDuration=runM==='duration';
+  const count=byDuration?Infinity:Math.min(+$('#count').value||1, 100000);
+  const durMs=byDuration?Math.min((+$('#duration').value||1)*1000, 3600000):null;
+
+  running=true;
+  controllers.clear();
+  records=[];
+  logMethod=$('#method').value;
+
+  $('#logview').innerHTML='';
+  updateLogCnt();
+  
+  let sent=0, done=0, errCount=0, rl=0, first429=null;
+  const start=performance.now(), deadline=byDuration?start+durMs:null;
+
+  $('#run').classList.add('hide');
+  $('#stop').classList.remove('hide');
+  $('#liveDot').classList.add('active');
+  $('#liveStatusText').textContent = 'Running';
+  $('#liveTargetSummary').textContent = `· ${logMethod} ${url}`;
+
+  logEvt(`Test started: ${logMethod} ${url} · ${byDuration?durMs/1000+'s':count+' reqs'} · conc ${conc}`);
+
+  const moreWork=()=>running&&(byDuration?performance.now()<deadline:sent<count);
+
+  async function once(){
+    const {init, preview, ctNote, sentHeaders}=buildReq();
+    const ac=new AbortController();
+    controllers.add(ac);
+    init.signal=AbortSignal.any?AbortSignal.any([ac.signal,AbortSignal.timeout(timeout)]):ac.signal;
+    const t0=performance.now(), firedAt=new Date().toISOString();
+    let rec;
+    
+    try {
+      const res=await fetch(url, init);
+      const ms=performance.now()-t0, code=noCors?0:res.status;
+      const detail={url, mode:init.mode, reqHeaders:sentHeaders, reqBody:preview, ctNote, status:code, statusText:'', respHeaders:{}, respBody:'', bodyTrunc:false, startedAt:firedAt, opaque:noCors};
+      
+      if(!noCors){
+        detail.statusText=res.statusText||'';
+        try{ res.headers.forEach((v,k)=>detail.respHeaders[k]=v); }catch{}
+        try{
+          let txt=await res.text();
+          if(txt.length>BODY_CAP){ txt=txt.slice(0,BODY_CAP); detail.bodyTrunc=true; }
+          detail.respBody=txt;
+        } catch(err){
+          detail.respBody='<could not read body: '+err.name+'>';
+        }
+      } else {
+        try{ await res.blob(); }catch{}
+      }
+
+      rec={t:t0-start, ms, status:code, err:'', detail};
+      if(code===429){
+        rl++;
+        if(!first429) first429={n:records.length+1, t:performance.now()-start};
+      }
+      done++;
+      if(code===429 && stopOn429) running=false;
+    } catch(e){
+      const key=e.name==='TimeoutError'?'timeout':(e.name==='AbortError'?'aborted':(e.message||'error')).slice(0,60);
+      rec={t:t0-start, ms:performance.now()-t0, status:'ERR', err:key, detail:{url, mode:init.mode, reqHeaders:sentHeaders, reqBody:preview, ctNote, error:key, startedAt:firedAt, opaque:false}};
+      errCount++;
+    } finally {
+      controllers.delete(ac);
+    }
+
+    records.push(rec);
+    const idx=records.length-1;
+    if(idx-DETAIL_KEEP>=0 && records[idx-DETAIL_KEEP]) records[idx-DETAIL_KEEP].detail=null;
+    appendLog(idx, rec);
+  }
+
+  let n=0;
+  async function worker(){
+    while(moreWork()){
+      sent++;
+      await once();
+      if(++n%Math.max(1,Math.floor(conc/2))===0) renderMetrics();
+      if(delay>0&&moreWork()) await new Promise(r=>setTimeout(r,delay));
+    }
+  }
+
+  function renderMetrics(){
+    const total=done+errCount;
+    const elapsed=(performance.now()-start)/1000;
+    const hist={};
+    records.forEach(r=>hist[r.status]=(hist[r.status]||0)+1);
+    const lat=records.filter(r=>r.status!=='ERR').map(r=>r.ms).sort((a,b)=>a-b);
+    const prog=byDuration?Math.min(100, elapsed/(durMs/1000)*100):Math.round(total/count*100);
+
+    $('#progressBar').style.width = Math.min(100, prog) + '%';
+    $('#liveTimeSummary').textContent = `${elapsed.toFixed(1)}s · ${total}${byDuration?'':' / '+count}`;
+
+    $('#mDone').textContent = done;
+    $('#mDoneSub').textContent = total>0 ? `${((done/total)*100).toFixed(0)}% ok` : '0%';
+    
+    $('#mRl').textContent = rl;
+    $('#mRl').style.color = rl ? 'var(--bad)' : 'var(--text)';
+    $('#mRlSub').textContent = first429 ? `At #${first429.n} (${(first429.t/1000).toFixed(1)}s)` : 'None';
+
+    $('#mErr').textContent = errCount;
+    $('#mErrSub').textContent = `${errCount} failures`;
+
+    const rps = (done/Math.max(elapsed, 0.001)).toFixed(1);
+    $('#mRps').textContent = rps;
+
+    renderStatusTable(hist, total);
+    renderPercentileTable(lat);
+    drawChart();
+
+    $('#expJson').onclick=()=>exportData('json',{config:snap(), summary:{done,errCount,rl,first429,elapsed}, hist});
+    $('#expCsv').onclick=()=>exportData('csv');
+  }
+
+  function snap(){
+    return {url, method:logMethod, mode:$('#mode').value, conc, delay, timeout, runMode:runM, count:byDuration?null:count, durationSec:byDuration?durMs/1000:null};
+  }
+
+  function exportData(kind, obj){
+    let blob, name;
+    if(kind==='json'){
+      blob=new Blob([JSON.stringify({...obj, records:records.map((r,i)=>({i:i+1, t:+r.t.toFixed(1), ms:+r.ms.toFixed(1), status:r.status, err:r.err}))},null,2)],{type:'application/json'});
+      name='loadtest.json';
+    } else {
+      const rows=['index,time_ms,status,latency_ms,error', ...records.map((r,i)=>`${i+1},${r.t.toFixed(1)},${r.status},${r.ms.toFixed(1)},${(r.err||'').replace(/,/g,';')}`)];
+      blob=new Blob([rows.join('\n')], {type:'text/csv'});
+      name='loadtest.csv';
+    }
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  renderMetrics();
+  await Promise.all(Array.from({length:conc}, worker));
+  running=false;
+  renderMetrics();
+
+  const summary = `Done: ${done} ok, ${errCount} errors, ${rl}×429 in ${((performance.now()-start)/1000).toFixed(2)}s`;
+  logEvt(summary + (first429 ? ` · 429 at #${first429.n}` : ''));
+
+  $('#liveDot').classList.remove('active');
+  $('#liveStatusText').textContent = 'Completed';
+  $('#stop').classList.add('hide');
+  $('#run').classList.remove('hide');
+  $('#run').disabled=!$('#auth').checked;
+}
+
+$('#run').onclick=runTest;
+$('#stop').onclick=()=>{
+  running=false;
+  controllers.forEach(c=>c.abort());
+  $('#liveStatusText').textContent='Stopping';
+};
+
+window.addEventListener('resize', () => { if(records.length) drawChart(); });
+
+loadCfg();
+</script>
+</body>
+</html>

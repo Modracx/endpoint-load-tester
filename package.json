@@ -1,0 +1,10 @@
+{
+  "name": "loadtester",
+  "version": "1.0.0",
+  "description": "Self-hosted load tester for rate-limit and endpoint security testing",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT"
+}
