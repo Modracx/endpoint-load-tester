@@ -53,6 +53,35 @@
     outline-offset: 1px;
   }
 
+  /* Themed scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--surface-sub);
+    border: 2px solid var(--bg);
+    border-radius: 6px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--border-focus);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
   /* Header */
   header {
     height: 48px;
@@ -343,61 +372,79 @@
   }
 
   /* Dashboard Metrics */
-  .metrics-strip {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-
-  @media (max-width: 700px) {
-    .metrics-strip { grid-template-columns: repeat(2, 1fr); }
-  }
-
-  .metric-cell {
-    background: var(--surface);
-    padding: 14px 16px;
+  .summary-line {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    padding: 2px 0 4px;
   }
 
-  .metric-label {
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--text-muted);
+  .summary-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    white-space: nowrap;
   }
 
-  .metric-val {
-    font-size: 20px;
+  .summary-label {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .summary-val {
+    font-size: 15px;
     font-weight: 600;
     font-family: var(--mono);
     color: var(--text);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
   }
 
-  .metric-sub {
+  .summary-sub {
     font-size: 11px;
     color: var(--text-dim);
+  }
+
+  .summary-div {
+    width: 1px;
+    align-self: stretch;
+    background: var(--border-subtle);
+  }
+
+  @media (max-width: 700px) {
+    .summary-div { display: none; }
+    .summary-line { gap: 6px 16px; }
   }
 
   /* Progress & Status */
   .status-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
+    gap: 12px;
     font-size: 12px;
   }
 
   .status-indicator {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    min-width: 0;
+    flex: 1;
     font-family: var(--mono);
     font-size: 12px;
+  }
+
+  #liveTargetSummary {
+    min-width: 0;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+  }
+
+  #liveTimeSummary {
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   .status-dot {
@@ -577,7 +624,7 @@
   .log-row .status { width: 50px; }
   .log-row .ms { color: var(--text-muted); width: 60px; text-align: right; }
   .log-row .msg { color: var(--bad); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-  .log-row.event { color: var(--text-dim); font-style: italic; cursor: default; }
+  .log-row.event { display: block; color: var(--text-dim); font-style: italic; cursor: default; line-height: 1.5; overflow-wrap: anywhere; word-break: break-word; }
   .log-row.event:hover { background: transparent; }
 
   /* Details Dialog */
@@ -828,27 +875,30 @@
       </div>
     </div>
 
-    <!-- 4 Metrics Strip -->
-    <div class="metrics-strip">
-      <div class="metric-cell">
-        <div class="metric-label">Completed</div>
-        <div class="metric-val" id="mDone">0</div>
-        <div class="metric-sub" id="mDoneSub">0.0% ok</div>
+    <!-- Inline Summary Line -->
+    <div class="summary-line">
+      <div class="summary-item">
+        <span class="summary-label">Completed</span>
+        <span class="summary-val" id="mDone">0</span>
+        <span class="summary-sub" id="mDoneSub">0% ok</span>
       </div>
-      <div class="metric-cell">
-        <div class="metric-label">429 Rate Limits</div>
-        <div class="metric-val" id="mRl" style="color:var(--text)">0</div>
-        <div class="metric-sub" id="mRlSub">Threshold: —</div>
+      <span class="summary-div"></span>
+      <div class="summary-item">
+        <span class="summary-label">429s</span>
+        <span class="summary-val" id="mRl">0</span>
+        <span class="summary-sub" id="mRlSub">None</span>
       </div>
-      <div class="metric-cell">
-        <div class="metric-label">Errors</div>
-        <div class="metric-val" id="mErr">0</div>
-        <div class="metric-sub" id="mErrSub">0 network fails</div>
+      <span class="summary-div"></span>
+      <div class="summary-item">
+        <span class="summary-label">Errors</span>
+        <span class="summary-val" id="mErr">0</span>
+        <span class="summary-sub" id="mErrSub">0 failures</span>
       </div>
-      <div class="metric-cell">
-        <div class="metric-label">Throughput</div>
-        <div class="metric-val" id="mRps">0.0</div>
-        <div class="metric-sub">req / sec</div>
+      <span class="summary-div"></span>
+      <div class="summary-item">
+        <span class="summary-label">Throughput</span>
+        <span class="summary-val" id="mRps">0.0</span>
+        <span class="summary-sub">req/s</span>
       </div>
     </div>
 
@@ -1228,6 +1278,7 @@ function openDetail(idx){
         <div>
           <div class="section-label" style="margin-bottom:6px; color:var(--bad)">Error Message</div>
           <pre class="code" style="color:var(--bad)">${esc(dt.error||rec.err)}</pre>
+          ${dt.hint?`<p class="text-dim" style="font-size:12px; margin-top:8px; line-height:1.55">${esc(dt.hint)}</p>`:''}
         </div>`;
     } else if(dt.opaque){
       html+=`
@@ -1483,8 +1534,25 @@ async function runTest(){
       done++;
       if(code===429 && stopOn429) running=false;
     } catch(e){
-      const key=e.name==='TimeoutError'?'timeout':(e.name==='AbortError'?'aborted':(e.message||'error')).slice(0,60);
-      rec={t:t0-start, ms:performance.now()-t0, status:'ERR', err:key, detail:{url, mode:init.mode, reqHeaders:sentHeaders, reqBody:preview, ctNote, error:key, startedAt:firedAt, opaque:false}};
+      let key, hint='';
+      if(e.name==='TimeoutError'){
+        key='timeout';
+        hint=`No response within the ${timeout}ms timeout. The endpoint may be slow, or a Cloudflare challenge is holding the connection.`;
+      } else if(e.name==='AbortError'){
+        key='aborted';
+      } else if(e.name==='TypeError'){
+        // The browser deliberately hides the real reason for a cross-origin
+        // fetch failure. A Cloudflare challenge / WAF / rate-limit page
+        // (errors 1010, 1015, 1020), a CORS-less reply, and DNS/TLS/connection
+        // failures all surface here identically as an opaque "Failed to fetch".
+        key = noCors ? 'connection failed' : 'blocked · no CORS header';
+        hint = noCors
+          ? 'The request never got a response: DNS failure, TLS error, connection refused, or the host is offline. (no-cors mode cannot see status codes, so a real HTTP error would show as opaque, not here.)'
+          : 'The browser blocked reading the response because the reply carried no Access-Control-Allow-Origin header. This is what a Cloudflare challenge, WAF, or rate-limit page (errors 1010 / 1015 / 1020) looks like from the browser: the server almost certainly DID respond, but its status and body are hidden cross-origin. To confirm the endpoint is reachable, switch CORS Mode to no-cors. To read the actual status and body, the endpoint must send CORS headers.';
+      } else {
+        key=(e.message||'error').slice(0,80);
+      }
+      rec={t:t0-start, ms:performance.now()-t0, status:'ERR', err:key, detail:{url, mode:init.mode, reqHeaders:sentHeaders, reqBody:preview, ctNote, error:key, hint, startedAt:firedAt, opaque:false}};
       errCount++;
     } finally {
       controllers.delete(ac);
